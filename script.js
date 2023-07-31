@@ -11,9 +11,9 @@ const account1 = {
     "2020-01-28T09:15:04.904Z",
     "2020-04-01T10:17:24.185Z",
     "2020-05-08T14:11:59.604Z",
-    "2020-07-26T17:01:17.194Z",
-    "2020-07-28T23:36:17.929Z",
-    "2020-08-01T10:51:36.790Z",
+    "2023-07-26T17:01:17.194Z",
+    "2023-07-28T23:36:17.929Z",
+    "2023-07-30T10:51:36.790Z",
   ],
   currency: "EUR",
   locale: "pt-PT",
@@ -92,6 +92,45 @@ const createUsername = function (accs) {
 };
 createUsername(accounts);
 
+//formatdates**************************************************
+const formatDate = function (newdate) {
+  //days calculate
+  const CalcdaysPassed = (date1, date2) =>
+    Math.round(Math.abs(date2 - date1) / (24 * 60 * 60 * 1000));
+  const daysPassed = CalcdaysPassed(new Date(), newdate);
+
+  if (daysPassed === 0) return "Today";
+  if (daysPassed === 1) return "Yestarday";
+  if (daysPassed <= 7) return `${daysPassed} days ago`;
+  else {
+    const dt = `${newdate.getDate()}`.padStart(2, 0);
+    const month = `${newdate.getMonth() + 1}`.padStart(2, 0);
+    return `${dt}/${month}/${newdate.getFullYear()}`;
+  }
+};
+
+//set timer*************************************************
+let timer, time;
+const startLogouttimer = function () {
+  const tick = function () {
+    const min = String(Math.trunc(time / 60)).padStart(2, "0");
+    const sec = String(time % 60).padStart(2, "0");
+    labelTimer.textContent = `${min}:${sec}`;
+    if (time === 0) {
+      labelWelcome.textContent = `Login to get started`;
+      containerApp.style.opacity = 0;
+      clearInterval(timer);
+    }
+    time--;
+  };
+  //set time
+  time = 5 * 60;
+  tick();
+  //call timer every sec
+  timer = setInterval(tick, 1000);
+  return timer;
+};
+
 //displaying movements**************************************************
 const diaplayMovments = function (acc, sort = false) {
   containerMovements.innerHTML = " ";
@@ -102,11 +141,9 @@ const diaplayMovments = function (acc, sort = false) {
   movs.forEach((mov, i) => {
     const type = mov > 0 ? "deposit" : "withdrawal";
     console.log(mov);
+
     const newdate = new Date(acc.movementsDates[i]);
-    console.log(newdate);
-    const dt = `${newdate.getDate()}`.padStart(2, 0);
-    const month = `${newdate.getMonth() + 1}`.padStart(2, 0);
-    const displayDate = `${dt}/${month}/${newdate.getFullYear()}`;
+    const displayDate = formatDate(newdate);
 
     let html = `
     <div class="movements__row">
@@ -119,6 +156,7 @@ const diaplayMovments = function (acc, sort = false) {
     containerMovements.insertAdjacentHTML("afterbegin", html);
   });
 };
+
 //calculate balalnce**********************************************************
 const calcDisplayBalance = function (acc) {
   acc.balance = acc.movements.reduce((acc, cur) => acc + cur, 0);
@@ -191,6 +229,9 @@ btnLogin.addEventListener("click", function (e) {
     //clear input fields
     inputLoginPin.value = inputLoginUsername.value = "";
     inputLoginPin.blur();
+    //checking if there is already a timer
+    if (timer) clearInterval(timer);
+    timer = startLogouttimer();
     updateUI(currentAccount);
   }
 });
@@ -217,6 +258,9 @@ btnTransfer.addEventListener("click", function (e) {
     currentAccount.movementsDates.push(new Date().toISOString());
     receiverAcc.movementsDates.push(new Date().toISOString());
     updateUI(currentAccount);
+    //reset timer
+    clearInterval(timer);
+    time = startLogouttimer();
   }
 });
 
@@ -228,11 +272,16 @@ btnLoan.addEventListener("click", function (e) {
     ammount > 0 &&
     currentAccount.movements.some((cur) => cur > ammount * 0.1)
   ) {
-    currentAccount.movements.push(ammount);
-    currentAccount.movementsDates.push(new Date().toISOString());
-    updateUI(currentAccount);
+    setTimeout(function () {
+      currentAccount.movements.push(ammount);
+      currentAccount.movementsDates.push(new Date().toISOString());
+      updateUI(currentAccount);
+    }, 2500);
   }
   inputLoanAmount.value = "";
+  //reset timer
+  clearInterval(timer);
+  time = startLogouttimer();
 });
 
 //closing account***********************************************************
@@ -258,3 +307,4 @@ btnSort.addEventListener("click", function (e) {
   diaplayMovments(currentAccount, !sortState);
   sortState = !sortState;
 });
+
